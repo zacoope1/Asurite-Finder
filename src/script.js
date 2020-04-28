@@ -7,7 +7,9 @@ var proxyUrl = 'https://cors-anywhere.herokuapp.com/';
 // Global block & element conter for naming purposes
 var OUTPUT_BLOCK_COUNTER = 0;
 var OUTPUT_ELEMENT_COUNTER = 0;
-
+//Error Messages
+var COULD_NOT_LOCATE_ERROR_1 = "We're sorry, We could not locate an asurite registered to this email address.";
+var COULD_NOT_LOCATE_ERROR_2 = "If you believe this is an error please try again later.";
 /*
 
     Clears the Output_Pane root element.
@@ -31,8 +33,8 @@ async function setOutputPane(){
 
     //TODO Make method & checkboxes so we can narrow down what info we want to gather from the provided JSON
     // Gather Info
-    var fullName = await getFullName();
-    var asuriteid = await getAsuriteId();
+    var fullName = await getFullName_With_Proxy();
+    var asuriteid = await getAsuriteId_With_Proxy();
 
     // Clear current output pane
     clearOutputPane(); 
@@ -43,13 +45,19 @@ async function setOutputPane(){
     //Check if variables are valid. If so, create an element for display.
     if(asuriteid != null || asuriteid != undefined){
 
-        createOutputElement(blockName,"Asurite Id",asuriteid);
+        createOutputElement(blockName,"h4",asuriteid);
+
+    }
+    else {
+
+        createOutputElement(blockName,"p",COULD_NOT_LOCATE_ERROR_1);
+        createOutputElement(blockName,"p",COULD_NOT_LOCATE_ERROR_2);
 
     }
 
     if(fullName != null || asuriteid != undefined){
 
-        createOutputElement(blockName,"Name",fullName);
+        createOutputElement(blockName,"h4",fullName);
 
     }
 
@@ -92,7 +100,7 @@ function createOutputBlock(appendTo){
 function createOutputElement(appendTo,type,text){
 
     OUTPUT_ELEMENT_COUNTER += 1;
-    var Element = document.createElement("h4");
+    var Element = document.createElement(type);
     Element.id = "Output_Element_" + OUTPUT_ELEMENT_COUNTER;
     Element.class = "Output_Element";
     Element.innerHTML = text;
@@ -107,7 +115,7 @@ function createOutputElement(appendTo,type,text){
     @return null (If email provided has no asurite)
 
 */
-async function getAsuriteId(){
+async function getAsuriteId_With_Proxy(){
 
     var targetUrl = begin + document.getElementById("Email_Input").value + end;
     var asuriteID;
@@ -130,7 +138,73 @@ async function getAsuriteId(){
 
 /*
 
+    Makes a JSON request
+    @return string - asurite id
+    @return null (If email provided has no asurite)
+
+*/
+async function getAsuriteId(){
+
+    var targetUrl = begin + document.getElementById("Email_Input").value + end;
+    var asuriteID;
+
+    await fetch(targetUrl)
+    .then(json => json.json())
+    .then(data => {
+
+        asuriteID = data["response"]["docs"]["0"].asuriteId;
+
+    })
+    .catch(e => {
+        console.log(e);
+        return null;
+    });
+
+    return asuriteID;
+
+}
+
+/*
+
     Makes a JSON request using a CORS proxy.
+    @return string - Name
+    @return null (If email provided has no asurite)
+
+*/
+async function getFullName_With_Proxy(){
+
+    var targetUrl = begin + document.getElementById("Email_Input").value + end;
+    var fullName;
+
+    await fetch(proxyUrl + targetUrl)
+    .then(json => json.json())
+    .then(data => {
+
+        try{
+
+            fullName = "" + data["response"]["docs"]["0"].firstName + " " + data["response"]["docs"]["0"].lastName;
+
+        }
+        catch(error){
+
+            console.log(error);
+
+        }
+        
+
+    })
+    .catch(e => {
+        console.log(e);
+        return null;
+    });
+
+    return fullName;
+
+}
+
+/*
+
+    Makes a JSON request
     @return string - Name
     @return null (If email provided has no asurite)
 
@@ -140,7 +214,7 @@ async function getFullName(){
     var targetUrl = begin + document.getElementById("Email_Input").value + end;
     var fullName;
 
-    await fetch(proxyUrl + targetUrl)
+    await fetch(targetUrl)
     .then(json => json.json())
     .then(data => {
 
